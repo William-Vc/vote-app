@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线投票</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f4f8 0%, #f5f7fa 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .options-list {
+            margin-bottom: 20px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .option-item input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .option-item input:focus {
+            border-color: #3498db;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #34495e;
+        }
+
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .vote-options {
+            margin-top: 20px;
+        }
+
+        .vote-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .vote-option:hover:not(.disabled) {
+            border-color: #3498db;
+            background: #f0f7fd;
+            transform: translateX(5px);
+        }
+
+        .vote-option.disabled {
+            cursor: default;
+        }
+
+        .vote-option.selected {
+            border-color: #27ae60;
+            background: #f0fdf4;
+        }
+
+        .option-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .option-votes {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #3498db;
+        }
+
+        .server-info {
+            text-align: center;
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗳️ 在线投票</h1>
+
+        <!-- 创建投票界面 -->
+        <div id="create-section">
+            <h2>创建新投票</h2>
+            
+            <div class="input-group">
+                <label for="vote-title">投票标题</label>
+                <input type="text" id="vote-title" placeholder="请输入投票标题">
+            </div>
+
+            <div class="input-group">
+                <label>投票选项</label>
+                <div class="options-list" id="options-list">
+                    <div class="option-item">
+                        <input type="text" class="option-input" placeholder="选项 1">
+                        <button class="btn btn-danger remove-option" disabled>×</button>
+                    </div>
+                    <div class="option-item">
+                        <input type="text" class="option-input" placeholder="选项 2">
+                        <button class="btn btn-danger remove-option">×</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="add-option">+ 添加选项</button>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" id="start-vote">开始投票</button>
+            </div>
+        </div>
+
+        <!-- 投票界面 -->
+        <div id="vote-section" class="hidden">
+            <div class="status-message" id="vote-status"></div>
+            
+            <h2 id="vote-title-display"></h2>
+            
+            <div id="vote-options-container">
+                <div class="loading" id="loading">加载中...</div>
+                <div class="vote-options" id="vote-options"></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="refresh-vote">刷新结果</button>
+                <button class="btn btn-danger" id="reset-vote">重置投票</button>
+            </div>
+        </div>
+
+        <div class="server-info">
+            服务端: <span id="server-status">连接中...</span>
+        </div>
+    </div>
+
+    <script>
+        // API 基础地址（自动检测当前域名）
+        const API_BASE = '/api';
+
+        // 存储键名
+        const STORAGE_KEY_USER_ID = 'vote_user_id';
+        const STORAGE_KEY_CURRENT_VOTE = 'vote_current_id';
+
+        // DOM 元素
+        const createSection = document.getElementById('create-section');
+        const voteSection = document.getElementById('vote-section');
+        const voteTitleInput = document.getElementById('vote-title');
+        const optionsList = document.getElementById('options-list');
+        const addOptionBtn = document.getElementById('add-option');
+        const startVoteBtn = document.getElementById('start-vote');
+        const voteTitleDisplay = document.getElementById('vote-title-display');
+        const voteOptions = document.getElementById('vote-options');
+        const voteStatus = document.getElementById('vote-status');
+        const resetVoteBtn = document.getElementById('reset-vote');
+        const refreshVoteBtn = document.getElementById('refresh-vote');
+        const loading = document.getElementById('loading');
+        const serverStatus = document.getElementById('server-status');
+
+        // 当前投票数据
+        let currentVote = null;
+        let hasVoted = false;
+        let votedOptionId = null;
+
+        // 获取或生成用户ID
+        function getUserId() {
+            let userId = localStorage.getItem(STORAGE_KEY_USER_ID);
+            if (!userId) {
+                userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(STORAGE_KEY_USER_ID, userId);
+            }
+            return userId;
+        }
+
+        // 初始化
+        async function init() {
+            await checkServerConnection();
+            
+            const currentVoteId = localStorage.getItem(STORAGE_KEY_CURRENT_VOTE);
+            
+            if (currentVoteId) {
+                try {
+                    await loadVote(currentVoteId);
+                } catch (e) {
+                    showCreateSection();
+                }
+            } else {
+                showCreateSection();
+            }
+        }
+
+        // 检查服务器连接
+        async function checkServerConnection() {
+            try {
+                const response = await fetch(API_BASE + '/votes');
+                if (response.ok) {
+                    serverStatus.textContent = '已连接';
+                    serverStatus.style.color = '#27ae60';
+                } else {
+                    serverStatus.textContent = '本地模式';
+                    serverStatus.style.color = '#f39c12';
+                    useLocalStorageMode();
+                }
+            } catch (e) {
+                serverStatus.textContent = '本地模式';
+                serverStatus.style.color = '#f39c12';
+                useLocalStorageMode();
+            }
+        }
+
+        // 使用本地存储模式（服务器不可用时降级）
+        function useLocalStorageMode() {
+            currentVote = null;
+            hasVoted = false;
+            votedOptionId = null;
+            localStorage.removeItem(STORAGE_KEY_CURRENT_VOTE);
+            showCreateSection();
+        }
+
+        // 显示创建界面
+        function showCreateSection() {
+            createSection.classList.remove('hidden');
+            voteSection.classList.add('hidden');
+        }
+
+        // 显示投票界面
+        function showVoteSection() {
+            createSection.classList.add('hidden');
+            voteSection.classList.remove('hidden');
+        }
+
+        // 添加选项
+        addOptionBtn.addEventListener('click', () => {
+            const optionCount = optionsList.querySelectorAll('.option-item').length;
+            const newItem = document.createElement('div');
+            newItem.className = 'option-item';
+            newItem.innerHTML = `
+                <input type="text" class="option-input" placeholder="选项 ${optionCount + 1}">
+                <button class="btn btn-danger remove-option">×</button>
+            `;
+            optionsList.appendChild(newItem);
+            updateRemoveButtons();
+            newItem.querySelector('.remove-option').addEventListener('click', removeOption);
+        });
+
+        // 移除选项
+        function removeOption(e) {
+            e.target.parentElement.remove();
+            updateRemoveButtons();
+        }
+
+        // 更新移除按钮状态
+        function updateRemoveButtons() {
+            const items = optionsList.querySelectorAll('.option-item');
+            const removeButtons = optionsList.querySelectorAll('.remove-option');
+            
+            removeButtons.forEach((btn) => {
+                btn.disabled = items.length <= 2;
+            });
+        }
+
+        // 创建投票
+        startVoteBtn.addEventListener('click', async () => {
+            const title = voteTitleInput.value.trim();
+            const optionInputs = optionsList.querySelectorAll('.option-input');
+            const options = [];
+            
+            optionInputs.forEach(input => {
+                const value = input.value.trim();
+                if (value) {
+                    options.push(value);
+                }
+            });
+
+            if (!title) {
+                alert('请输入投票标题');
+                return;
+            }
+            
+            if (options.length < 2) {
+                alert('至少需要2个有效选项');
+                return;
+            }
+
+            startVoteBtn.disabled = true;
+            startVoteBtn.textContent = '创建中...';
+
+            try {
+                const response = await fetch(API_BASE + '/votes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, options })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentVote = data;
+                    localStorage.setItem(STORAGE_KEY_CURRENT_VOTE, data.id.toString());
+                    await checkUserVoteStatus();
+                    showVoteSection();
+                } else {
+                    alert(data.error || '创建投票失败');
+                }
+            } catch (e) {
+                // 如果服务器不可用，使用本地存储模式
+                saveLocalVote(title, options);
+                showVoteSection();
+            } finally {
+                startVoteBtn.disabled = false;
+                startVoteBtn.textContent = '开始投票';
+            }
+        });
+
+        // 保存到本地存储（降级方案）
+        function saveLocalVote(title, options) {
+            currentVote = {
+                id: 1,
+                title: title,
+                options: options.map((name, index) => ({
+                    id: index + 1,
+                    name: name,
+                    count: 0
+                }))
+            };
+            localStorage.setItem('local_vote', JSON.stringify(currentVote));
+            hasVoted = false;
+            votedOptionId = null;
+        }
+
+        // 加载投票
+        async function loadVote(voteId) {
+            loading.style.display = 'block';
+            voteOptions.innerHTML = '';
+
+            try {
+                const response = await fetch(API_BASE + '/votes/' + voteId);
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentVote = data;
+                    await checkUserVoteStatus();
+                    renderVote();
+                    showVoteSection();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                // 尝试从本地存储加载
+                const localData = localStorage.getItem('local_vote');
+                if (localData) {
+                    currentVote = JSON.parse(localData);
+                    hasVoted = localStorage.getItem('local_hasVoted') === 'true';
+                    votedOptionId = localStorage.getItem('local_votedOptionId') ? parseInt(localStorage.getItem('local_votedOptionId')) : null;
+                    renderVote();
+                    showVoteSection();
+                } else {
+                    throw e;
+                }
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // 检查用户投票状态
+        async function checkUserVoteStatus() {
+            if (!currentVote) return;
+
+            try {
+                const response = await fetch(API_BASE + '/votes/' + currentVote.id + '/checkvote?userId=' + getUserId());
+                const data = await response.json();
+
+                if (response.ok) {
+                    hasVoted = data.hasVoted;
+                    votedOptionId = data.votedOptionId;
+                }
+            } catch (e) {
+                console.error('检查投票状态失败:', e);
+            }
+        }
+
+        // 渲染投票界面
+        function renderVote() {
+            if (!currentVote) return;
+
+            voteTitleDisplay.textContent = currentVote.title;
+            
+            if (hasVoted) {
+                voteStatus.textContent = '✓ 您已完成投票，感谢参与！';
+                voteStatus.className = 'status-message status-success';
+            } else {
+                voteStatus.textContent = '点击选项进行投票（每人限投一次）';
+                voteStatus.className = 'status-message status-warning';
+            }
+
+            voteOptions.innerHTML = '';
+            
+            const totalVotes = currentVote.options.reduce((sum, opt) => sum + opt.count, 0);
+            
+            currentVote.options.forEach((option) => {
+                const votes = option.count;
+                const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
+                const isSelected = votedOptionId === option.id;
+                
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `vote-option ${isSelected ? 'selected' : ''} ${hasVoted ? 'disabled' : ''}`;
+                optionDiv.innerHTML = `
+                    <div class="option-header">
+                        <span class="option-name">${option.name}</span>
+                        <span class="option-votes">${votes} 票 (${percentage}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                
+                if (!hasVoted) {
+                    optionDiv.addEventListener('click', () => vote(option.id));
+                }
+                
+                voteOptions.appendChild(optionDiv);
+            });
+        }
+
+        // 投票
+        async function vote(optionId) {
+            if (hasVoted || !currentVote) return;
+
+            try {
+                const response = await fetch(API_BASE + '/votes/' + currentVote.id + '/vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ optionId: optionId, userId: getUserId() })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentVote = data.vote;
+                    hasVoted = true;
+                    votedOptionId = optionId;
+                    renderVote();
+                } else {
+                    voteStatus.textContent = '投票失败: ' + data.error;
+                    voteStatus.className = 'status-message status-error';
+                }
+            } catch (e) {
+                // 本地存储模式投票
+                const option = currentVote.options.find(o => o.id === optionId);
+                if (option) {
+                    option.count++;
+                    hasVoted = true;
+                    votedOptionId = optionId;
+                    localStorage.setItem('local_vote', JSON.stringify(currentVote));
+                    localStorage.setItem('local_hasVoted', 'true');
+                    localStorage.setItem('local_votedOptionId', optionId.toString());
+                    renderVote();
+                }
+            }
+        }
+
+        // 刷新投票结果
+        refreshVoteBtn.addEventListener('click', async () => {
+            if (!currentVote) return;
+            
+            refreshVoteBtn.disabled = true;
+            refreshVoteBtn.textContent = '刷新中...';
+            
+            try {
+                await loadVote(currentVote.id);
+            } catch (e) {
+                alert('刷新失败');
+            } finally {
+                refreshVoteBtn.disabled = false;
+                refreshVoteBtn.textContent = '刷新结果';
+            }
+        });
+
+        // 重置投票
+        resetVoteBtn.addEventListener('click', async () => {
+            if (!confirm('确定要重置投票吗？所有数据将被清除。')) {
+                return;
+            }
+
+            resetVoteBtn.disabled = true;
+            resetVoteBtn.textContent = '重置中...';
+
+            try {
+                const response = await fetch(API_BASE + '/votes', { method: 'DELETE' });
+
+                if (response.ok) {
+                    clearAllData();
+                } else {
+                    throw new Error('重置失败');
+                }
+            } catch (e) {
+                // 本地重置
+                clearAllData();
+            } finally {
+                resetVoteBtn.disabled = false;
+                resetVoteBtn.textContent = '重置投票';
+            }
+        });
+
+        // 清除所有数据
+        function clearAllData() {
+            currentVote = null;
+            hasVoted = false;
+            votedOptionId = null;
+            localStorage.removeItem(STORAGE_KEY_CURRENT_VOTE);
+            localStorage.removeItem('local_vote');
+            localStorage.removeItem('local_hasVoted');
+            localStorage.removeItem('local_votedOptionId');
+            
+            voteTitleInput.value = '';
+            optionsList.innerHTML = `
+                <div class="option-item">
+                    <input type="text" class="option-input" placeholder="选项 1">
+                    <button class="btn btn-danger remove-option" disabled>×</button>
+                </div>
+                <div class="option-item">
+                    <input type="text" class="option-input" placeholder="选项 2">
+                    <button class="btn btn-danger remove-option">×</button>
+                </div>
+            `;
+            
+            optionsList.querySelectorAll('.remove-option').forEach(btn => {
+                btn.addEventListener('click', removeOption);
+            });
+            
+            showCreateSection();
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
